@@ -10,11 +10,16 @@
         body { background: var(--bg); color: #444; }
 
         .navbar { padding: 1.5rem 2rem; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .controls { padding: 1rem 2rem; display: flex; gap: 10px; }
+        .controls { padding: 1rem 2rem; display: flex; flex-direction: column; gap: 10px; }
+        .btn-group { display: flex; gap: 10px; }
         button { padding: 8px 16px; border-radius: 12px; border: none; background: #eee; cursor: pointer; }
         button.active { background: var(--red); color: white; }
 
-        .board { display: flex; gap: 15px; padding: 0 2rem; overflow-x: auto; height: 75vh; }
+        /* Sub-filter untuk Tahun */
+        #yearFilter { display: none; gap: 5px; margin-top: 5px; }
+        .year-btn { background: #ffdada; color: var(--red); font-size: 0.8rem; }
+
+        .board { display: flex; gap: 15px; padding: 0 2rem; overflow-x: auto; height: 70vh; }
         .lane { min-width: 280px; }
         .lane h3 { font-size: 0.75rem; color: #999; margin-bottom: 1rem; text-transform: uppercase; }
 
@@ -27,11 +32,19 @@
 <body>
 
     <nav class="navbar"><strong>ZIKOGS Worksheets</strong></nav>
-    <div class="controls" id="filters">
-        <button class="active" onclick="filterData('All', this)">Semua</button>
-        <button onclick="filterData('Sewa', this)">Sewa</button>
-        <button onclick="filterData('Analisis', this)">Analisis</button>
-        <button onclick="filterData('Khusus', this)">Khusus</button>
+    <div class="controls">
+        <div class="btn-group">
+            <button class="active" onclick="filterData('All', this)">Semua</button>
+            <button onclick="filterData('Sewa', this)">Sewa</button>
+            <button onclick="filterData('Analisis', this)">Analisis</button>
+            <button onclick="filterData('Khusus', this)">Khusus</button>
+        </div>
+        <div id="yearFilter">
+            <span>Filter Tahun: </span>
+            <button class="year-btn" onclick="filterByYear(2026)">2026</button>
+            <button class="year-btn" onclick="filterByYear(2027)">2027</button>
+            <button class="year-btn" onclick="filterByYear(2028)">2028</button>
+        </div>
     </div>
 
     <main class="board" id="board"></main>
@@ -51,7 +64,8 @@
         
         let data = Array.from({length: 10}, (_, i) => ({
             id: i, gedung: `Gedung ${i+1}`, kategori: ['Sewa','Analisis','Khusus'][i%3],
-            step: steps[i%6], kota: "Bandung", sekre: "Sekre A", tglAwal: "2024-01-01", tglAkhir: "2027-01-01",
+            step: steps[i%6], kota: "Bandung", sekre: "Sekre A", tglAwal: "2024-01-01", 
+            tahunHabis: 2026 + (i%3), // Menambahkan tahun habis sewa dummy
             notes: ["AC rusak", "Cat kusam"]
         }));
 
@@ -63,18 +77,33 @@
                     ${filtered.filter(t => t.step === step).map(t => `
                         <div class="task-card" onclick="bukaModal(${t.id})">
                             <strong>${t.gedung}</strong>
-                            <small style="display:block; color:#888;">${t.kategori}</small>
+                            <small style="display:block; color:#888;">${t.kategori} | Exp: ${t.tahunHabis}</small>
                         </div>
                     `).join('')}
                 </div>
             `).join('');
         }
 
+        function filterData(cat, btn) {
+            document.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Tampilkan/Sembunyikan filter tahun
+            document.getElementById('yearFilter').style.display = (cat === 'Sewa') ? 'flex' : 'none';
+            
+            render(cat === 'All' ? data : data.filter(t => t.kategori === cat));
+        }
+
+        function filterByYear(year) {
+            render(data.filter(t => t.kategori === 'Sewa' && t.tahunHabis === year));
+        }
+
+        // Fungsi modal, pindahStep, tambahCatatan tetap sama seperti sebelumnya...
         function bukaModal(id) {
             let g = data.find(x => x.id === id);
             window.activeId = id;
             document.getElementById('modalTitle').innerText = g.gedung;
-            document.getElementById('modalDetails').innerHTML = `Cabang: ${g.kota} <br>Sekretariat: ${g.sekre} <br>Sewa: ${g.tglAwal} - ${g.tglAkhir} <br><strong>Status: ${g.step.replace('_', ' ')}</strong>`;
+            document.getElementById('modalDetails').innerHTML = `Tahun Habis: ${g.tahunHabis} <br><strong>Status: ${g.step.replace('_', ' ')}</strong>`;
             
             let navButtons = `
                 <div style="display:flex; gap:10px; margin:15px 0;">
@@ -86,7 +115,6 @@
             document.getElementById('modalNotes').innerHTML = g.notes.map((n, idx) => `
                 <div class="note-item">${n} <button onclick="editNote(${id}, ${idx})" style="background:none; border:none; cursor:pointer;">✎</button></div>
             `).join('') + navButtons;
-            
             document.getElementById('modal').showModal();
         }
 
@@ -110,12 +138,6 @@
         function editNote(gId, nIdx) {
             let newVal = prompt("Edit catatan:", data.find(x=>x.id===gId).notes[nIdx]);
             if(newVal) { data.find(x=>x.id===gId).notes[nIdx] = newVal; bukaModal(gId); }
-        }
-
-        function filterData(cat, btn) {
-            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            render(cat === 'All' ? data : data.filter(t => t.kategori === cat));
         }
 
         render();
