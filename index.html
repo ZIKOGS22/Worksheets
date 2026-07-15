@@ -8,28 +8,32 @@
         :root { --neon: #00f3ff; --bg: #050a0f; --card: #0d161f; }
         
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
-        body { background: var(--bg); color: var(--neon); overflow-x: hidden; }
+        body { background: var(--bg); color: var(--neon); }
 
-        /* Navbar */
-        .navbar { padding: 1.5rem; border-bottom: 2px solid var(--neon); display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: 3px; }
+        /* Navbar & Filter */
+        .navbar { padding: 1.5rem; border-bottom: 2px solid var(--neon); display: flex; justify-content: space-between; }
+        .filter-bar { padding: 1rem 2rem; display: flex; gap: 15px; border-bottom: 1px solid #1a3a4a; }
         
-        /* Swimlane */
-        .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; height: 85vh; }
-        .lane { min-width: 280px; border-left: 1px solid #1a3a4a; padding: 10px; }
-        .lane h3 { font-size: 0.7rem; margin-bottom: 15px; border-bottom: 1px solid var(--neon); padding-bottom: 5px; }
-
-        /* Task Card - HiTech */
-        .task-card { 
-            background: var(--card); padding: 15px; margin-bottom: 15px; border: 1px solid var(--neon); 
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); cursor: pointer; transition: 0.3s;
+        /* Buttons Casual Hi-Tech */
+        button { 
+            background: transparent; border: 1px solid var(--neon); color: var(--neon);
+            padding: 8px 15px; cursor: pointer; transition: 0.3s;
         }
-        .task-card:hover { box-shadow: 0 0 20px var(--neon); background: #152230; }
-        .task-card strong { display: block; font-size: 0.8rem; margin-bottom: 5px; color: white; }
-        .task-card small { font-size: 0.65rem; opacity: 0.7; }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { height: 5px; }
-        ::-webkit-scrollbar-thumb { background: var(--neon); }
+        button:hover, button.active { background: var(--neon); color: var(--bg); }
+
+        /* Board & Lanes */
+        .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; }
+        .lane { min-width: 250px; }
+        .lane h3 { font-size: 0.7rem; margin-bottom: 15px; opacity: 0.6; }
+
+        /* BUBBLE EFFECT CARD */
+        .task-card { 
+            background: var(--card); padding: 15px; margin-bottom: 15px; 
+            border: 1px solid var(--neon); border-radius: 20px; /* Bubble rounded */
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); 
+            cursor: pointer; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .task-card:hover { transform: scale(1.05); box-shadow: 0 0 25px var(--neon); }
     </style>
 </head>
 <body>
@@ -38,6 +42,13 @@
         <div>// ZIKOGS_WORKSTATION_V1</div>
         <div id="clock">SYSTEM_READY</div>
     </nav>
+
+    <div class="filter-bar">
+        <button class="active" onclick="filterData('All', this)">ALL</button>
+        <button onclick="filterData('SEWA', this)">SEWA</button>
+        <button onclick="filterData('ANALISIS', this)">ANALISIS</button>
+        <button onclick="filterData('KHUSUS', this)">KHUSUS</button>
+    </div>
 
     <div class="board" id="board"></div>
 
@@ -49,12 +60,18 @@
             step: steps[i % 6]
         }));
 
-        function render() {
+        function filterData(cat, btn) {
+            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            render(cat === 'All' ? data : data.filter(t => t.kategori === cat));
+        }
+
+        function render(filtered = data) {
             const board = document.getElementById('board');
             board.innerHTML = steps.map(step => `
                 <div class="lane">
                     <h3>[${step}]</h3>
-                    ${data.filter(t => t.step === step).map(t => `
+                    ${filtered.filter(t => t.step === step).map(t => `
                         <div class="task-card">
                             <strong>${t.gedung}</strong>
                             <small>TYPE: ${t.kategori}</small>
