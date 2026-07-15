@@ -47,7 +47,8 @@
     </dialog>
 
     <script>
-        const steps = ["Ajuan", "Proses", "Bidang_Lain", "Review_Kabag", "Kirim_MM", "Selesai"];
+        const steps = ["Ajuan", "Proses", "Review_Kabag", "Bidang_Lain", "Kirim_MM", "Selesai"];
+        
         let data = Array.from({length: 10}, (_, i) => ({
             id: i, gedung: `Gedung ${i+1}`, kategori: ['Sewa','Analisis','Khusus'][i%3],
             step: steps[i%6], kota: "Bandung", sekre: "Sekre A", tglAwal: "2024-01-01", tglAkhir: "2027-01-01",
@@ -58,7 +59,7 @@
             const board = document.getElementById('board');
             board.innerHTML = steps.map(step => `
                 <div class="lane">
-                    <h3>${step}</h3>
+                    <h3>${step.replace('_', ' ')}</h3>
                     ${filtered.filter(t => t.step === step).map(t => `
                         <div class="task-card" onclick="bukaModal(${t.id})">
                             <strong>${t.gedung}</strong>
@@ -73,17 +74,37 @@
             let g = data.find(x => x.id === id);
             window.activeId = id;
             document.getElementById('modalTitle').innerText = g.gedung;
-            document.getElementById('modalDetails').innerHTML = `Cabang: ${g.kota} <br>Sekretariat: ${g.sekre} <br>Sewa: ${g.tglAwal} - ${g.tglAkhir}`;
+            document.getElementById('modalDetails').innerHTML = `Cabang: ${g.kota} <br>Sekretariat: ${g.sekre} <br>Sewa: ${g.tglAwal} - ${g.tglAkhir} <br><strong>Status: ${g.step.replace('_', ' ')}</strong>`;
+            
+            let navButtons = `
+                <div style="display:flex; gap:10px; margin:15px 0;">
+                    <button onclick="pindahStep(-1)" style="flex:1; padding:5px; border-radius:10px; border:1px solid #ccc; background:#fff; cursor:pointer;">← Prev</button>
+                    <button onclick="pindahStep(1)" style="flex:1; padding:5px; border-radius:10px; border:none; background:var(--red); color:white; cursor:pointer;">Next →</button>
+                </div>
+            `;
+            
             document.getElementById('modalNotes').innerHTML = g.notes.map((n, idx) => `
                 <div class="note-item">${n} <button onclick="editNote(${id}, ${idx})" style="background:none; border:none; cursor:pointer;">✎</button></div>
-            `).join('');
+            `).join('') + navButtons;
+            
             document.getElementById('modal').showModal();
+        }
+
+        function pindahStep(direction) {
+            let g = data.find(x => x.id === window.activeId);
+            let currentIndex = steps.indexOf(g.step);
+            let newIndex = currentIndex + direction;
+            if (newIndex >= 0 && newIndex < steps.length) {
+                g.step = steps[newIndex];
+                render(); 
+                bukaModal(g.id);
+            }
         }
 
         function tambahCatatan() {
             let g = data.find(x => x.id === window.activeId);
             let val = document.getElementById('newNote').value;
-            if(val && g.notes.length < 5) { g.notes.push(val); bukaModal(window.activeId); }
+            if(val && g.notes.length < 5) { g.notes.push(val); document.getElementById('newNote').value = ""; bukaModal(window.activeId); }
         }
 
         function editNote(gId, nIdx) {
