@@ -14,6 +14,8 @@
         .btn-group { display: flex; gap: 10px; }
         button { padding: 8px 16px; border-radius: 12px; border: none; background: #eee; cursor: pointer; }
         button.active { background: var(--red); color: white; }
+        #yearFilter { display: none; gap: 5px; margin-top: 5px; }
+        .year-btn { background: #ffdada; color: var(--red); font-size: 0.8rem; }
 
         .board { display: flex; gap: 15px; padding: 0 2rem; overflow-x: auto; height: 60vh; }
         .lane { min-width: 280px; }
@@ -38,6 +40,11 @@
             <button onclick="filterData('Analisis', this)">Analisis</button>
             <button onclick="filterData('Khusus', this)">Khusus</button>
         </div>
+        <div id="yearFilter">
+            <span>Filter Tahun: </span>
+            <button class="year-btn" onclick="filterByYear(2026)">2026</button>
+            <button class="year-btn" onclick="filterByYear(2027)">2027</button>
+        </div>
     </div>
 
     <main class="board" id="board"></main>
@@ -54,35 +61,38 @@
 
     <script>
         const steps = ["Ajuan", "Proses", "Review_Kabag", "Bidang_Lain", "Kirim_MM", "Selesai"];
-
-        // 1. DATA SEWA (Input JSON dari Excel Anda di sini)
-        let sewaData = [
-            { id: 101, gedung: "Gedung A", kategori: "Sewa", step: "Ajuan", kota: "Bandung", notes: ["Sewa 2026"] }
-        ];
-
-        // 2. DATA MANUAL (Tugas Briefing)
+        
+        let sewaData = [{ id: 101, gedung: "Gedung A", kategori: "Sewa", step: "Ajuan", tahunHabis: 2026, notes: [] }];
         let manualData = JSON.parse(localStorage.getItem('manualData')) || [];
 
-        function render(filteredCat = 'All') {
-            let combinedData = [...sewaData, ...manualData];
-            if (filteredCat !== 'All') combinedData = combinedData.filter(t => t.kategori === filteredCat);
-
+        function render(dataToRender = [...sewaData, ...manualData]) {
             const board = document.getElementById('board');
             board.innerHTML = steps.map(step => `
                 <div class="lane">
                     <h3>${step.replace('_', ' ')}</h3>
-                    ${combinedData.filter(t => t.step === step).map(t => `
+                    ${dataToRender.filter(t => t.step === step).map(t => `
                         <div class="task-card" onclick="bukaModal(${t.id})">
                             <strong>${t.gedung}</strong>
-                            <small style="display:block; color:#888;">${t.kategori}</small>
+                            <small style="display:block; color:#888;">${t.kategori} ${t.tahunHabis ? '| Exp: '+t.tahunHabis : ''}</small>
                         </div>
                     `).join('')}
                 </div>
             `).join('');
         }
 
+        function filterData(cat, btn) {
+            document.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('yearFilter').style.display = (cat === 'Sewa') ? 'flex' : 'none';
+            render(cat === 'All' ? [...sewaData, ...manualData] : [...sewaData, ...manualData].filter(t => t.kategori === cat));
+        }
+
+        function filterByYear(year) {
+            render(sewaData.filter(t => t.tahunHabis === year));
+        }
+
         function tambahTugasManual() {
-            let nama = prompt("Nama Gedung/Tugas:");
+            let nama = prompt("Nama Tugas:");
             let kat = prompt("Kategori (Analisis/Khusus):");
             if (nama && kat) {
                 manualData.push({ id: Date.now(), gedung: nama, kategori: kat, step: "Ajuan", notes: [] });
@@ -96,10 +106,25 @@
             let g = all.find(x => x.id === id);
             window.activeId = id;
             document.getElementById('modalTitle').innerText = g.gedung;
-            document.getElementById('modalNotes').innerHTML = g.notes.map((n, idx) => `
-                <div class="note-item">${n} <button onclick="editNote(${id}, ${idx})" style="background:none; border:none; cursor:pointer;">✎</button></div>
-            `).join('');
+            
+            let nav = `<div style="display:flex; gap:10px; margin:15px 0;">
+                <button onclick="pindahStep(-1)" style="flex:1; padding:5px; border-radius:10px; border:1px solid #ccc; background:#fff;">← Prev</button>
+                <button onclick="pindahStep(1)" style="flex:1; padding:5px; border-radius:10px; border:none; background:var(--red); color:white;">Next →</button>
+            </div>`;
+            
+            document.getElementById('modalNotes').innerHTML = g.notes.map((n, idx) => 
+                `<div class="note-item">${n} <button onclick="editNote(${id}, ${idx})" style="background:none; border:none;">✎</button></div>`).join('') + nav;
             document.getElementById('modal').showModal();
+        }
+
+        function pindahStep(dir) {
+            let all = [...sewaData, ...manualData];
+            let g = all.find(x => x.id === window.activeId);
+            let idx = steps.indexOf(g.step) + dir;
+            if(idx >= 0 && idx < steps.length) {
+                g.step = steps[idx];
+                render(); bukaModal(g.id);
+            }
         }
 
         function tambahCatatan() {
@@ -111,14 +136,8 @@
 
         function editNote(id, idx) {
             let all = [...sewaData, ...manualData];
-            let newVal = prompt("Edit:", all.find(x => x.id === id).notes[idx]);
-            if(newVal) { all.find(x => x.id === id).notes[idx] = newVal; bukaModal(id); render(); }
-        }
-
-        function filterData(cat, btn) {
-            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            render(cat);
+            let val = prompt("Edit:", all.find(x=>x.id===id).notes[idx]);
+            if(val) { all.find(x=>x.id===id).notes[idx] = val; bukaModal(id); render(); }
         }
 
         render();
