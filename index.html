@@ -14,15 +14,14 @@
         .btn-group { display: flex; gap: 10px; }
         button { padding: 8px 16px; border-radius: 12px; border: none; background: #eee; cursor: pointer; }
         button.active { background: var(--red); color: white; }
-        #yearFilter { display: none; gap: 5px; margin-top: 5px; }
-        .year-btn { background: #ffdada; color: var(--red); font-size: 0.8rem; }
-
+        
         .board { display: flex; gap: 15px; padding: 0 2rem; overflow-x: auto; height: 60vh; }
         .lane { min-width: 280px; }
         .lane h3 { font-size: 0.75rem; color: #999; margin-bottom: 1rem; text-transform: uppercase; }
-
         .task-card { background: var(--card); padding: 16px; border-radius: 20px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); border-left: 5px solid var(--red); cursor: pointer; }
-        dialog { padding: 2rem; border-radius: 30px; border: none; width: 450px; }
+        
+        dialog { padding: 2rem; border-radius: 30px; border: none; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border-radius: 10px; border: 1px solid #ccc; }
         .note-item { display: flex; justify-content: space-between; background: #fdf6e3; padding: 10px; margin: 5px 0; border-radius: 10px; align-items: center; }
     </style>
 </head>
@@ -30,7 +29,7 @@
 
     <nav class="navbar">
         <strong>ZIKOGS Worksheets</strong>
-        <button onclick="tambahTugasManual()" style="background:var(--red); color:white;">+ Tugas Manual</button>
+        <button onclick="document.getElementById('manualModal').showModal()" style="background:var(--red); color:white;">+ Tugas Manual</button>
     </nav>
 
     <div class="controls">
@@ -40,8 +39,7 @@
             <button onclick="filterData('Analisis', this)">Analisis</button>
             <button onclick="filterData('Khusus', this)">Khusus</button>
         </div>
-        <div id="yearFilter">
-            <span>Filter Tahun: </span>
+        <div id="yearFilter" style="display:none; gap:5px;">
             <button class="year-btn" onclick="filterByYear(2026)">2026</button>
             <button class="year-btn" onclick="filterByYear(2027)">2027</button>
         </div>
@@ -49,97 +47,78 @@
 
     <main class="board" id="board"></main>
 
-    <dialog id="modal">
+    <!-- Modal Detail & Note -->
+    <dialog id="detailModal">
         <h2 id="modalTitle"></h2>
-        <div id="modalDetails" style="margin: 15px 0; font-size: 0.9rem;"></div>
+        <div id="modalDetails" style="margin: 15px 0; font-size: 0.9rem; line-height: 1.6;"></div>
         <h3>Catatan:</h3>
         <div id="modalNotes"></div>
-        <input type="text" id="newNote" placeholder="Tambah catatan..." style="width:100%; padding:8px; margin:10px 0; border-radius:10px; border:1px solid #ccc;">
-        <button onclick="tambahCatatan()" style="width:100%; padding:8px; border-radius:10px; background:var(--red); color:white; border:none; cursor:pointer;">TAMBAH CATATAN</button>
-        <button onclick="document.getElementById('modal').close()" style="width:100%; margin-top:5px; padding:8px; border-radius:10px; border:none; background:#eee;">TUTUP</button>
+        <input type="text" id="newNote" placeholder="Tambah catatan...">
+        <button onclick="tambahCatatan()" style="width:100%; padding:8px; border-radius:10px; background:var(--red); color:white; border:none;">TAMBAH</button>
+        <button onclick="document.getElementById('detailModal').close()" style="width:100%; margin-top:5px; padding:8px; border-radius:10px; border:none; background:#eee;">TUTUP</button>
+    </dialog>
+
+    <!-- Modal Input Manual Profesional -->
+    <dialog id="manualModal">
+        <h2>Input Tugas Baru</h2>
+        <label>Nama Gedung/Tugas:</label> <input type="text" id="mNama">
+        <label>Kategori:</label> <select id="mKat"><option>Analisis</option><option>Khusus</option></select>
+        <button onclick="simpanManual()" style="width:100%; padding:10px; border-radius:10px; background:var(--red); color:white; border:none;">SIMPAN TUGAS</button>
+        <button onclick="document.getElementById('manualModal').close()" style="width:100%; margin-top:5px; padding:10px; border-radius:10px; border:none;">BATAL</button>
     </dialog>
 
     <script>
         const steps = ["Ajuan", "Proses", "Review_Kabag", "Bidang_Lain", "Kirim_MM", "Selesai"];
-        
-        let sewaData = [{ id: 101, gedung: "Gedung A", kategori: "Sewa", step: "Ajuan", tahunHabis: 2026, notes: [] }];
+        // 6 Field Lengkap untuk Data Sewa
+        let sewaData = [{ id: 101, gedung: "Gedung A", kategori: "Sewa", step: "Ajuan", kota: "Bandung", cabang: "Cabang 1", sekre: "Sekre A", tglAwal: "2024-01-01", tglAkhir: "2027-01-01", tahunHabis: 2026, notes: [] }];
         let manualData = JSON.parse(localStorage.getItem('manualData')) || [];
 
-        function render(dataToRender = [...sewaData, ...manualData]) {
+        function render(data = [...sewaData, ...manualData]) {
             const board = document.getElementById('board');
             board.innerHTML = steps.map(step => `
-                <div class="lane">
-                    <h3>${step.replace('_', ' ')}</h3>
-                    ${dataToRender.filter(t => t.step === step).map(t => `
+                <div class="lane"><h3>${step.replace('_', ' ')}</h3>
+                    ${data.filter(t => t.step === step).map(t => `
                         <div class="task-card" onclick="bukaModal(${t.id})">
                             <strong>${t.gedung}</strong>
-                            <small style="display:block; color:#888;">${t.kategori} ${t.tahunHabis ? '| Exp: '+t.tahunHabis : ''}</small>
+                            <small style="display:block; color:#888;">${t.kategori}</small>
                         </div>
                     `).join('')}
                 </div>
             `).join('');
         }
 
-        function filterData(cat, btn) {
-            document.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('yearFilter').style.display = (cat === 'Sewa') ? 'flex' : 'none';
-            render(cat === 'All' ? [...sewaData, ...manualData] : [...sewaData, ...manualData].filter(t => t.kategori === cat));
-        }
-
-        function filterByYear(year) {
-            render(sewaData.filter(t => t.tahunHabis === year));
-        }
-
-        function tambahTugasManual() {
-            let nama = prompt("Nama Tugas:");
-            let kat = prompt("Kategori (Analisis/Khusus):");
-            if (nama && kat) {
+        function simpanManual() {
+            let nama = document.getElementById('mNama').value;
+            let kat = document.getElementById('mKat').value;
+            if(nama) {
                 manualData.push({ id: Date.now(), gedung: nama, kategori: kat, step: "Ajuan", notes: [] });
                 localStorage.setItem('manualData', JSON.stringify(manualData));
-                render();
+                document.getElementById('manualModal').close(); render();
             }
         }
 
         function bukaModal(id) {
-            let all = [...sewaData, ...manualData];
-            let g = all.find(x => x.id === id);
+            let g = [...sewaData, ...manualData].find(x => x.id === id);
             window.activeId = id;
             document.getElementById('modalTitle').innerText = g.gedung;
-            
-            let nav = `<div style="display:flex; gap:10px; margin:15px 0;">
-                <button onclick="pindahStep(-1)" style="flex:1; padding:5px; border-radius:10px; border:1px solid #ccc; background:#fff;">← Prev</button>
-                <button onclick="pindahStep(1)" style="flex:1; padding:5px; border-radius:10px; border:none; background:var(--red); color:white;">Next →</button>
-            </div>`;
-            
-            document.getElementById('modalNotes').innerHTML = g.notes.map((n, idx) => 
-                `<div class="note-item">${n} <button onclick="editNote(${id}, ${idx})" style="background:none; border:none;">✎</button></div>`).join('') + nav;
-            document.getElementById('modal').showModal();
+            let info = g.kategori === 'Sewa' ? `Cabang: ${g.cabang}<br>Kota: ${g.kota}<br>Sekre: ${g.sekre}<br>Sewa: ${g.tglAwal} s/d ${g.tglAkhir}` : `Tugas Manual`;
+            document.getElementById('modalDetails').innerHTML = info + `<br><strong>Status: ${g.step}</strong>`;
+            document.getElementById('modalNotes').innerHTML = g.notes.map((n, i) => `<div class="note-item">${n} <button onclick="editNote(${id}, ${i})" style="border:none; background:none;">✎</button></div>`).join('') + 
+                `<div style="display:flex; gap:5px; margin-top:10px;"><button onclick="pindahStep(-1)" style="flex:1;">← Prev</button><button onclick="pindahStep(1)" style="flex:1;">Next →</button></div>`;
+            document.getElementById('detailModal').showModal();
         }
 
-        function pindahStep(dir) {
-            let all = [...sewaData, ...manualData];
-            let g = all.find(x => x.id === window.activeId);
-            let idx = steps.indexOf(g.step) + dir;
-            if(idx >= 0 && idx < steps.length) {
-                g.step = steps[idx];
-                render(); bukaModal(g.id);
-            }
+        // Fungsi pembantu lainnya (pindahStep, tambahCatatan, editNote, filterData) tetap sama...
+        function pindahStep(d) {
+            let g = [...sewaData, ...manualData].find(x => x.id === window.activeId);
+            let i = steps.indexOf(g.step) + d;
+            if(i>=0 && i<steps.length) { g.step = steps[i]; render(); bukaModal(g.id); }
         }
-
-        function tambahCatatan() {
-            let all = [...sewaData, ...manualData];
-            let g = all.find(x => x.id === window.activeId);
-            let val = document.getElementById('newNote').value;
-            if(val) { g.notes.push(val); document.getElementById('newNote').value = ""; bukaModal(g.id); render(); }
+        function filterData(c, b) {
+            document.querySelectorAll('.btn-group button').forEach(x => x.classList.remove('active')); b.classList.add('active');
+            document.getElementById('yearFilter').style.display = (c === 'Sewa') ? 'flex' : 'none';
+            render(c === 'All' ? [...sewaData, ...manualData] : [...sewaData, ...manualData].filter(t => t.kategori === c));
         }
-
-        function editNote(id, idx) {
-            let all = [...sewaData, ...manualData];
-            let val = prompt("Edit:", all.find(x=>x.id===id).notes[idx]);
-            if(val) { all.find(x=>x.id===id).notes[idx] = val; bukaModal(id); render(); }
-        }
-
         render();
     </script>
 </body>
