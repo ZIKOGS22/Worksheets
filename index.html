@@ -2,26 +2,58 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZIKOGS Worksheets</title>
-    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* CSS Ditaruh di sini */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: #f0f2f5; }
+        .navbar { background: #1a2a3a; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; }
+        .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; }
+        .column { background: #ebedf0; min-width: 300px; padding: 15px; border-radius: 10px; }
+        .task-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #ccc; }
+        .sewa { border-left-color: #2ecc71; }
+        .kondisi { border-left-color: #e67e22; }
+        .khusus { border-left-color: #9b59b6; }
+        .btn { background: #27ae60; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+    </style>
 </head>
 <body>
+
     <header class="navbar">
         <div class="logo">ZIKOGS Worksheets</div>
-        <div class="header-actions">
-            <button id="addCategoryBtn" class="btn-primary">+ Tambah Kategori</button>
-        </div>
+        <button class="btn" onclick="tambahKategori()">+ Tambah Kategori</button>
     </header>
 
-    <main class="board-container">
-        <!-- Area ini akan diisi secara dinamis oleh app.js -->
-        <div id="board" class="board">
-            <!-- Kolom akan muncul di sini -->
-        </div>
+    <main class="board" id="board">
+        <!-- Kolom akan muncul di sini -->
     </main>
 
-    <script src="js/api.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        // Data & Logika ditaruh di sini
+        let data = [
+            { title: "Backlog", tasks: ["Perpanjangan Gedung A", "Analisis Atap"] },
+            { title: "In Progress", tasks: ["Negosiasi Sewa"] }
+        ];
+
+        function render() {
+            const board = document.getElementById('board');
+            board.innerHTML = data.map(col => `
+                <div class="column">
+                    <h3>${col.title}</h3>
+                    ${col.tasks.map(t => `<div class="task-card ${t.includes('Sewa') ? 'sewa' : 'kondisi'}">${t}</div>`).join('')}
+                </div>
+            `).join('');
+        }
+
+        function tambahKategori() {
+            let nama = prompt("Nama Kategori Baru:");
+            if(nama) {
+                data.push({ title: nama, tasks: [] });
+                render();
+            }
+        }
+
+        render();
+    </script>
 </body>
 </html>
