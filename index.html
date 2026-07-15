@@ -4,101 +4,92 @@
     <meta charset="UTF-8">
     <title>ZIKOGS Worksheets</title>
     <style>
-        :root { --primary: #1a2a3a; --bg: #f0f2f5; --card: #ffffff; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        :root { --primary: #1a2a3a; --bg: #f0f2f5; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: var(--bg); }
-        
-        /* Navbar */
-        .navbar { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Filter Bar */
-        .filter-bar { background: white; padding: 1rem 2rem; display: flex; gap: 20px; align-items: center; border-bottom: 1px solid #ddd; }
-        
-        /* Kanban Board */
-        .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; align-items: flex-start; }
+        .navbar { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; }
+        .tabs { display: flex; gap: 10px; padding: 10px 20px; background: white; border-bottom: 1px solid #ddd; }
+        .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; }
         .column { background: #ebedf0; min-width: 300px; padding: 15px; border-radius: 10px; }
-        .column h3 { margin-bottom: 15px; color: #555; }
-        
-        /* Task Card */
-        .task-card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 5px solid #ccc; cursor: pointer; transition: 0.3s; }
-        .task-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .task-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #ccc; cursor: pointer; }
+        /* Warna berdasarkan kategori */
         .sewa { border-left-color: #2ecc71; }
-        .kondisi { border-left-color: #e67e22; }
+        .analisis { border-left-color: #e67e22; }
         .khusus { border-left-color: #9b59b6; }
-        .progress-bg { height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; }
-        .progress-fill { height: 100%; background: #27ae60; border-radius: 4px; }
-        
-        /* Modal */
-        dialog { padding: 25px; border-radius: 12px; border: none; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; }
-        .btn { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        .produktif { border-left-color: #3498db; }
+        dialog { padding: 20px; border-radius: 10px; border: none; width: 400px; }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div style="font-weight:bold; font-size:1.5rem;">ZIKOGS Worksheets</div>
-        <button class="btn" onclick="tambahKategori()">+ Tambah Kategori</button>
+        <div>ZIKOGS Worksheets</div>
+        <div id="yearFilter" style="display:none;">
+            Tahun Sewa: <button onclick="filterByYear(2026)">2026</button> <button onclick="filterByYear(2027)">2027</button>
+        </div>
     </nav>
 
-    <section class="filter-bar">
-        <div><strong>Filter Tahun Sewa:</strong> 
-            <button>All</button> <button>2026</button> <button>2027</button>
-        </div>
-    </section>
+    <div class="tabs">
+        <button onclick="setCategory('Sewa')">Sewa Gedung</button>
+        <button onclick="setCategory('Analisis')">Analisis Gedung</button>
+        <button onclick="setCategory('Khusus')">Tugas Khusus</button>
+        <button onclick="setCategory('Produktivitas')">Produktivitas</button>
+    </div>
 
-    <main class="board" id="board">
-        <div class="column">
-            <h3>Backlog</h3>
-            <div class="task-card sewa" onclick="bukaModal('Perpanjangan Gedung Sudirman')">
-                <strong>Perpanjangan Gedung Sudirman</strong>
-                <div style="font-size: 0.8rem; color: #666;">Sewa Habis: 2027</div>
-                <div class="progress-bg"><div class="progress-fill" style="width: 40%"></div></div>
-            </div>
-        </div>
-        <div class="column">
-            <h3>In Progress</h3>
-            <div class="task-card kondisi" onclick="bukaModal('Analisis Atap Bandung')">
-                <strong>Analisis Atap Bandung</strong>
-                <div style="font-size: 0.8rem; color: #666;">Sewa Habis: 2025</div>
-                <div class="progress-bg"><div class="progress-fill" style="width: 70%"></div></div>
-            </div>
-        </div>
-    </main>
+    <main class="board" id="board"></main>
 
-    <!-- Modal Update -->
-    <dialog id="taskModal">
-        <h2 id="modalTitle">Update Tugas</h2>
-        <label>Progres (%):</label>
-        <input type="number" id="progressInput" placeholder="Masukkan angka 0-100">
-        <label>Catatan:</label>
-        <textarea id="noteInput" placeholder="Apa perkembangan terbaru?"></textarea>
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button class="btn" onclick="simpanData()">Simpan</button>
-            <button onclick="document.getElementById('taskModal').close()">Batal</button>
-        </div>
+    <dialog id="modal">
+        <h2 id="modalTitle">Gedung A</h2>
+        <p id="modalInfo"></p>
+        <button onclick="document.getElementById('modal').close()">Tutup</button>
     </dialog>
 
     <script>
-        function bukaModal(title) {
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('taskModal').showModal();
+        // Data Dummy 20 item
+        const data = Array.from({length: 20}, (_, i) => ({
+            id: i + 1,
+            gedung: `Gedung ${String.fromCharCode(65 + (i % 5))}`,
+            kategori: ['Sewa', 'Analisis', 'Khusus', 'Produktivitas'][i % 4],
+            sewaHabis: 2026 + (i % 2),
+            progres: (i * 5) % 100
+        }));
+
+        function render(filteredData = data) {
+            const board = document.getElementById('board');
+            board.innerHTML = `
+                <div class="column">
+                    <h3>Progres Tugas</h3>
+                    ${filteredData.map(t => `
+                        <div class="task-card ${t.kategori.toLowerCase()}" onclick="bukaGedung('${t.gedung}')">
+                            <strong>${t.gedung}</strong><br>
+                            Kategori: ${t.kategori}<br>
+                            Sewa Habis: ${t.sewaHabis}<br>
+                            Progres: ${t.progres}%
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
-        function simpanData() {
-            let prog = document.getElementById('progressInput').value;
-            let note = document.getElementById('noteInput').value;
-            alert("Data tersimpan: " + prog + "% - Catatan: " + note);
-            document.getElementById('taskModal').close();
+        function setCategory(cat) {
+            document.getElementById('yearFilter').style.display = (cat === 'Sewa') ? 'block' : 'none';
+            render(data.filter(t => t.kategori === cat));
         }
 
-        function tambahKategori() {
-            let nama = prompt("Nama Kategori Baru:");
-            if(nama) {
-                const board = document.getElementById('board');
-                board.innerHTML += `<div class="column"><h3>${nama}</h3></div>`;
-            }
+        function filterByYear(year) {
+            render(data.filter(t => t.sewaHabis === year));
         }
+
+        function bukaGedung(namaGedung) {
+            const semuaTugas = data.filter(t => t.gedung === namaGedung);
+            document.getElementById('modalTitle').innerText = namaGedung;
+            document.getElementById('modalInfo').innerHTML = semuaTugas.map(t => 
+                `<li>${t.kategori}: ${t.progres}%</li>`
+            ).join('');
+            document.getElementById('modal').showModal();
+        }
+
+        render();
     </script>
 </body>
 </html>
