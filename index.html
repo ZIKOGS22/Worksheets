@@ -7,25 +7,21 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <nav class="navbar">
+    <header class="navbar">
         <div class="logo">ZIKOGS Worksheets</div>
-        <div class="actions">
+        <div class="header-actions">
             <button id="addCategoryBtn" class="btn-primary">+ Tambah Kategori</button>
         </div>
-    </nav>
+    </header>
 
-    <main class="board">
-        <!-- Contoh Kolom Kanban -->
-        <section class="column" id="backlog">
-            <h3>Backlog</h3>
-            <div class="task-list"></div>
-        </section>
-        <section class="column" id="progress">
-            <h3>In Progress</h3>
-            <div class="task-list"></div>
-        </section>
+    <main class="board-container">
+        <!-- Area ini akan diisi secara dinamis oleh app.js -->
+        <div id="board" class="board">
+            <!-- Kolom akan muncul di sini -->
+        </div>
     </main>
 
+    <script src="js/api.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
