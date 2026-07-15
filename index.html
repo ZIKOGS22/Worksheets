@@ -2,89 +2,101 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>ZIKOGS // Casual Dashboard</title>
+    <title>ZIKOGS Worksheets</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-        :root { --red: #ff8a8a; --gold: #ffe066; --bg: #fffcf7; --card: #ffffff; }
-        
+        :root { --red: #ff8a8a; --bg: #fffcf7; --card: #ffffff; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background: var(--bg); color: #444; }
 
-        /* Navbar */
         .navbar { padding: 1.5rem 2rem; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        
-        /* Board & Lane */
-        .board { display: flex; gap: 20px; padding: 2rem; overflow-x: auto; }
-        .lane { min-width: 280px; }
-        .lane h3 { font-size: 0.8rem; color: #888; margin-bottom: 1rem; text-transform: uppercase; }
+        .controls { padding: 1rem 2rem; display: flex; gap: 10px; }
+        button { padding: 8px 16px; border-radius: 12px; border: none; background: #eee; cursor: pointer; }
+        button.active { background: var(--red); color: white; }
 
-        /* Bubble Card */
-        .task-card { 
-            background: var(--card); padding: 20px; margin-bottom: 15px; 
-            border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border-left: 6px solid var(--red); cursor: pointer; transition: 0.3s;
-        }
-        .task-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .board { display: flex; gap: 15px; padding: 0 2rem; overflow-x: auto; height: 75vh; }
+        .lane { min-width: 280px; }
+        .lane h3 { font-size: 0.75rem; color: #999; margin-bottom: 1rem; text-transform: uppercase; }
+
+        .task-card { background: var(--card); padding: 16px; border-radius: 20px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); border-left: 5px solid var(--red); cursor: pointer; }
         
-        /* Modal & Notes */
         dialog { padding: 2rem; border-radius: 30px; border: none; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .note-item { background: #fdf6e3; padding: 10px; margin: 5px 0; border-radius: 10px; font-size: 0.9rem; }
+        .note-item { display: flex; justify-content: space-between; background: #fdf6e3; padding: 10px; margin: 5px 0; border-radius: 10px; align-items: center; }
     </style>
 </head>
 <body>
 
     <nav class="navbar"><strong>ZIKOGS Worksheets</strong></nav>
+    <div class="controls" id="filters">
+        <button class="active" onclick="filterData('All', this)">Semua</button>
+        <button onclick="filterData('Sewa', this)">Sewa</button>
+        <button onclick="filterData('Analisis', this)">Analisis</button>
+        <button onclick="filterData('Khusus', this)">Khusus</button>
+    </div>
 
-    <div class="board" id="board"></div>
+    <main class="board" id="board"></main>
 
     <dialog id="modal">
         <h2 id="modalTitle"></h2>
-        <div id="modalDetails" style="margin: 15px 0; font-size: 0.9rem;"></div>
+        <div id="modalDetails" style="margin: 15px 0; font-size: 0.9rem; line-height: 1.6;"></div>
         <h3>Catatan Khusus:</h3>
         <div id="modalNotes"></div>
         <input type="text" id="newNote" placeholder="Tambah catatan..." style="width:100%; padding:8px; margin-top:10px; border-radius:10px; border:1px solid #ccc;">
-        <button onclick="tambahCatatan()" style="margin-top:10px; padding:8px; width:100%; border-radius:10px; background:var(--red); color:white; border:none; cursor:pointer;">TAMBAH</button>
-        <button onclick="document.getElementById('modal').close()" style="margin-top:10px; width:100%; border-radius:10px; background:#ddd; border:none; cursor:pointer;">TUTUP</button>
+        <button onclick="tambahCatatan()" style="margin-top:10px; width:100%; background:var(--red); color:white; border:none; padding:8px; border-radius:10px; cursor:pointer;">TAMBAH</button>
+        <button onclick="document.getElementById('modal').close()" style="margin-top:5px; width:100%; border:none; padding:8px; background:#eee; cursor:pointer; border-radius:10px;">TUTUP</button>
     </dialog>
 
     <script>
-        // Data awal
-        let gedungData = [{ id: 1, gedung: "Gedung Sudirman", notes: ["AC lantai 2 mati"] }];
-        let activeId = null;
+        const steps = ["Ajuan", "Proses", "Bidang_Lain", "Review_Kabag", "Kirim_MM", "Selesai"];
+        let data = Array.from({length: 10}, (_, i) => ({
+            id: i, gedung: `Gedung ${i+1}`, kategori: ['Sewa','Analisis','Khusus'][i%3],
+            step: steps[i%6], kota: "Bandung", sekre: "Sekre A", tglAwal: "2024-01-01", tglAkhir: "2027-01-01",
+            notes: ["AC rusak", "Cat kusam"]
+        }));
 
-        function render() {
+        function render(filtered = data) {
             const board = document.getElementById('board');
-            board.innerHTML = `
+            board.innerHTML = steps.map(step => `
                 <div class="lane">
-                    <h3>[LIST_GEDUNG]</h3>
-                    ${gedungData.map(g => `
-                        <div class="task-card" onclick="bukaModal(${g.id})">
-                            <strong>${g.gedung}</strong>
+                    <h3>${step}</h3>
+                    ${filtered.filter(t => t.step === step).map(t => `
+                        <div class="task-card" onclick="bukaModal(${t.id})">
+                            <strong>${t.gedung}</strong>
+                            <small style="display:block; color:#888;">${t.kategori}</small>
                         </div>
                     `).join('')}
                 </div>
-            `;
+            `).join('');
         }
 
         function bukaModal(id) {
-            activeId = id;
-            const g = gedungData.find(x => x.id === id);
+            let g = data.find(x => x.id === id);
+            window.activeId = id;
             document.getElementById('modalTitle').innerText = g.gedung;
-            document.getElementById('modalNotes').innerHTML = g.notes.map(n => `<div class="note-item">${n}</div>`).join('');
+            document.getElementById('modalDetails').innerHTML = `Cabang: ${g.kota} <br>Sekretariat: ${g.sekre} <br>Sewa: ${g.tglAwal} - ${g.tglAkhir}`;
+            document.getElementById('modalNotes').innerHTML = g.notes.map((n, idx) => `
+                <div class="note-item">${n} <button onclick="editNote(${id}, ${idx})" style="background:none; border:none; cursor:pointer;">✎</button></div>
+            `).join('');
             document.getElementById('modal').showModal();
         }
 
         function tambahCatatan() {
-            let g = gedungData.find(x => x.id === activeId);
-            let input = document.getElementById('newNote');
-            if(input.value && g.notes.length < 5) {
-                g.notes.push(input.value);
-                input.value = "";
-                bukaModal(g.id);
-            } else if(g.notes.length >= 5) {
-                alert("Maksimal 5 catatan!");
-            }
+            let g = data.find(x => x.id === window.activeId);
+            let val = document.getElementById('newNote').value;
+            if(val && g.notes.length < 5) { g.notes.push(val); bukaModal(window.activeId); }
         }
+
+        function editNote(gId, nIdx) {
+            let newVal = prompt("Edit catatan:", data.find(x=>x.id===gId).notes[nIdx]);
+            if(newVal) { data.find(x=>x.id===gId).notes[nIdx] = newVal; bukaModal(gId); }
+        }
+
+        function filterData(cat, btn) {
+            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            render(cat === 'All' ? data : data.filter(t => t.kategori === cat));
+        }
+
         render();
     </script>
 </body>
