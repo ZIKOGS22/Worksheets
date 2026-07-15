@@ -2,72 +2,69 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>ZIKOGS Worksheets</title>
+    <title>ZIKOGS // NEON TERMINAL</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        :root { --primary: #4f46e5; --bg: #f8fafc; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background: var(--bg); color: #1e293b; }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        :root { --neon: #00f3ff; --bg: #050a0f; --card: #0d161f; }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
+        body { background: var(--bg); color: var(--neon); overflow-x: hidden; }
 
-        /* Navbar & Controls */
-        .navbar { background: white; padding: 1.5rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .controls { padding: 1.5rem 2rem; display: flex; gap: 10px; }
-        button { padding: 10px 16px; border-radius: 8px; border: none; background: #e2e8f0; cursor: pointer; font-weight: 500; }
-        button.active { background: var(--primary); color: white; }
-
+        /* Navbar */
+        .navbar { padding: 1.5rem; border-bottom: 2px solid var(--neon); display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: 3px; }
+        
         /* Swimlane */
-        .board { display: flex; gap: 15px; padding: 0 2rem 2rem; overflow-x: auto; height: calc(100vh - 180px); }
-        .lane { background: #e2e8f0; min-width: 250px; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .lane h3 { font-size: 0.75rem; color: #64748b; padding-left: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; height: 85vh; }
+        .lane { min-width: 280px; border-left: 1px solid #1a3a4a; padding: 10px; }
+        .lane h3 { font-size: 0.7rem; margin-bottom: 15px; border-bottom: 1px solid var(--neon); padding-bottom: 5px; }
 
-        /* Task Card */
-        .task-card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); cursor: pointer; border-left: 4px solid var(--primary); }
-        .task-card strong { display: block; font-size: 0.85rem; margin-bottom: 4px; }
-        .task-card small { color: #64748b; font-size: 0.75rem; }
+        /* Task Card - HiTech */
+        .task-card { 
+            background: var(--card); padding: 15px; margin-bottom: 15px; border: 1px solid var(--neon); 
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); cursor: pointer; transition: 0.3s;
+        }
+        .task-card:hover { box-shadow: 0 0 20px var(--neon); background: #152230; }
+        .task-card strong { display: block; font-size: 0.8rem; margin-bottom: 5px; color: white; }
+        .task-card small { font-size: 0.65rem; opacity: 0.7; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { height: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--neon); }
     </style>
 </head>
 <body>
 
-    <nav class="navbar"><strong>ZIKOGS Worksheets</strong></nav>
-
-    <div class="controls">
-        <button class="active" onclick="filterData('All', this)">Semua</button>
-        <button onclick="filterData('Sewa', this)">Sewa</button>
-        <button onclick="filterData('Analisis', this)">Analisis</button>
-        <button onclick="filterData('Khusus', this)">Khusus</button>
-    </div>
+    <nav class="navbar">
+        <div>// ZIKOGS_WORKSTATION_V1</div>
+        <div id="clock">SYSTEM_READY</div>
+    </nav>
 
     <div class="board" id="board"></div>
 
     <script>
-        const steps = ["Ajuan", "Proses Pengerjaan", "Proses di bidang lain", "Review Kabag", "Kirim ke MM", "Selesai"];
-        const data = Array.from({length: 20}, (_, i) => ({
-            id: i, gedung: `Gedung ${String.fromCharCode(65 + (i % 5))}`,
-            kategori: ['Sewa', 'Analisis', 'Khusus'][i % 3],
+        const steps = ["AJUAN", "PROSES", "BIDANG_LAIN", "REVIEW_KABAG", "KIRIM_MM", "DONE"];
+        const data = Array.from({length: 15}, (_, i) => ({
+            id: i, gedung: `UNIT_0${i+1}`,
+            kategori: ['SEWA', 'ANALISIS', 'KHUSUS'][i % 3],
             step: steps[i % 6]
         }));
 
-        function filterData(cat, btn) {
-            document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            render(cat === 'All' ? data : data.filter(t => t.kategori === cat));
-        }
-
-        function render(filtered) {
+        function render() {
             const board = document.getElementById('board');
             board.innerHTML = steps.map(step => `
                 <div class="lane">
-                    <h3>${step}</h3>
-                    ${filtered.filter(t => t.step === step).map(t => `
+                    <h3>[${step}]</h3>
+                    ${data.filter(t => t.step === step).map(t => `
                         <div class="task-card">
                             <strong>${t.gedung}</strong>
-                            <small>${t.kategori}</small>
+                            <small>TYPE: ${t.kategori}</small>
                         </div>
                     `).join('')}
                 </div>
             `).join('');
         }
-        render(data);
+        render();
+        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
     </script>
 </body>
 </html>
