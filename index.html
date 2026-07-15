@@ -2,98 +2,83 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>ZIKOGS // RED_PROTOCOL</title>
+    <title>ZIKOGS // RED_PROTOCOL_DATA</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-        
-        /* Palet Warna Red & Gold */
-        :root { 
-            --red: #ff3e3e; 
-            --gold: #ffcc00; 
-            --bg: #1a0505; 
-            --card: #2a0a0a; 
-        }
-        
+        :root { --red: #ff3e3e; --gold: #ffcc00; --bg: #1a0505; --card: #2a0a0a; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
-        body { background: var(--bg); color: var(--gold); overflow-x: hidden; }
+        body { background: var(--bg); color: var(--gold); }
 
-        /* Efek Garis Scanline */
-        body::before {
-            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(255, 62, 62, 0.05) 50%, rgba(0, 0, 0, 0.05) 50%);
-            background-size: 100% 4px; pointer-events: none; z-index: 10;
-        }
-
-        .navbar { padding: 1.5rem; border-bottom: 2px solid var(--red); display: flex; justify-content: space-between; color: var(--red); }
-        .filter-bar { padding: 1rem 2rem; display: flex; gap: 15px; border-bottom: 1px solid #4a1a1a; }
-        
-        button { 
-            background: transparent; border: 1px solid var(--red); color: var(--red);
-            padding: 8px 15px; cursor: pointer; transition: 0.3s;
-        }
-        button:hover, button.active { background: var(--red); color: white; }
-
+        /* Board & Card */
         .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; }
-        .lane { min-width: 250px; border-left: 1px solid #4a1a1a; padding: 10px; }
-        .lane h3 { font-size: 0.7rem; margin-bottom: 15px; color: var(--red); border-bottom: 1px solid var(--red); padding-bottom: 5px; }
-
-        .task-card { 
-            background: var(--card); padding: 15px; margin-bottom: 15px; 
-            border: 1px solid var(--gold); border-radius: 20px; 
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.1); 
-            cursor: pointer; transition: 0.4s;
-        }
-        .task-card:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--gold); border-color: var(--red); }
-        .task-card strong { display: block; font-size: 0.8rem; margin-bottom: 5px; color: white; }
-        .task-card small { font-size: 0.65rem; color: var(--gold); }
+        .lane { min-width: 280px; border-left: 1px solid #4a1a1a; padding: 10px; }
+        .lane h3 { font-size: 0.7rem; color: var(--red); border-bottom: 1px solid var(--red); padding-bottom: 5px; margin-bottom: 10px; }
+        .task-card { background: var(--card); padding: 15px; margin-bottom: 15px; border: 1px solid var(--gold); border-radius: 20px; cursor: pointer; transition: 0.3s; }
+        .task-card:hover { transform: scale(1.03); border-color: var(--red); }
+        
+        /* Modal */
+        dialog { background: #1a0505; border: 1px solid var(--red); color: white; padding: 20px; border-radius: 20px; width: 500px; }
+        .note-item { font-size: 0.8rem; border-bottom: 1px solid #4a1a1a; padding: 5px 0; color: #ffcc00; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <div>// RED_PROTOCOL_ACTIVE</div>
-        <div id="clock">SYSTEM_READY</div>
-    </nav>
-
-    <div class="filter-bar">
-        <button class="active" onclick="filterData('All', this)">ALL</button>
-        <button onclick="filterData('SEWA', this)">SEWA</button>
-        <button onclick="filterData('ANALISIS', this)">ANALISIS</button>
-        <button onclick="filterData('KHUSUS', this)">KHUSUS</button>
-    </div>
+    <nav style="padding: 1.5rem; border-bottom: 2px solid var(--red); color: var(--red);">// RED_PROTOCOL_DATA_MANAGEMENT</nav>
 
     <div class="board" id="board"></div>
 
+    <dialog id="gedungModal">
+        <h2 id="modalTitle" style="color: var(--red);"></h2>
+        <div id="modalDetails" style="margin: 15px 0; font-size: 0.9rem;"></div>
+        <h3 style="margin-top: 15px;">Catatan Khusus (Max 5):</h3>
+        <div id="modalNotes"></div>
+        <button onclick="document.getElementById('gedungModal').close()" style="margin-top: 20px; background:transparent; color:white; border:1px solid white; padding:5px 15px; cursor:pointer;">CLOSE</button>
+    </dialog>
+
     <script>
-        const steps = ["AJUAN", "PROSES", "BIDANG_LAIN", "REVIEW_KABAG", "KIRIM_MM", "DONE"];
-        const data = Array.from({length: 15}, (_, i) => ({
-            id: i, gedung: `UNIT_0${i+1}`,
-            kategori: ['SEWA', 'ANALISIS', 'KHUSUS'][i % 3],
-            step: steps[i % 6]
-        }));
+        // Data Gedung dengan 6 Field & 5 Catatan
+        const gedungData = [
+            {
+                id: 1, namaCabang: "Bandung", kota: "Bandung", sekretariat: "Sekre A", 
+                gedung: "Gedung Sudirman", tglAwal: "2024-01-01", tglAkhir: "2027-01-01",
+                notes: ["AC Lantai 2 rusak", "Perlu cat ulang depan"]
+            },
+            {
+                id: 2, namaCabang: "Jakarta", kota: "Jakarta", sekretariat: "Sekre B", 
+                gedung: "Gedung Kuningan", tglAwal: "2023-05-01", tglAkhir: "2026-05-01",
+                notes: ["Parkiran penuh", "Kontrak akan habis segera"]
+            }
+        ];
 
-        function filterData(cat, btn) {
-            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            render(cat === 'All' ? data : data.filter(t => t.kategori === cat));
-        }
-
-        function render(filtered = data) {
+        function render() {
             const board = document.getElementById('board');
-            board.innerHTML = steps.map(step => `
+            board.innerHTML = `
                 <div class="lane">
-                    <h3>[${step}]</h3>
-                    ${filtered.filter(t => t.step === step).map(t => `
-                        <div class="task-card">
-                            <strong>${t.gedung}</strong>
-                            <small>TYPE: ${t.kategori}</small>
+                    <h3>[DATA_GEDUNG]</h3>
+                    ${gedungData.map(g => `
+                        <div class="task-card" onclick="bukaDetail(${g.id})">
+                            <strong>${g.gedung}</strong>
+                            <small>${g.namaCabang} - ${g.kota}</small>
                         </div>
                     `).join('')}
                 </div>
-            `).join('');
+            `;
         }
+
+        function bukaDetail(id) {
+            const g = gedungData.find(x => x.id === id);
+            document.getElementById('modalTitle').innerText = g.gedung;
+            document.getElementById('modalDetails').innerHTML = `
+                Cabang: ${g.namaCabang}<br>Sekretariat: ${g.sekretariat}<br>
+                Sewa: ${g.tglAwal} s/d ${g.tglAkhir}
+            `;
+            document.getElementById('modalNotes').innerHTML = g.notes.map((n, i) => 
+                `<div class="note-item">${i+1}. ${n}</div>`).join('') + 
+                (g.notes.length < 5 ? `<div style="font-size:0.7rem; margin-top:10px;">+ Tambah Catatan</div>` : "");
+            document.getElementById('gedungModal').showModal();
+        }
+
         render();
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
     </script>
 </body>
 </html>
