@@ -2,44 +2,56 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>ZIKOGS // NEON TERMINAL</title>
+    <title>ZIKOGS // RED_PROTOCOL</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-        :root { --neon: #00f3ff; --bg: #050a0f; --card: #0d161f; }
+        
+        /* Palet Warna Red & Gold */
+        :root { 
+            --red: #ff3e3e; 
+            --gold: #ffcc00; 
+            --bg: #1a0505; 
+            --card: #2a0a0a; 
+        }
         
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
-        body { background: var(--bg); color: var(--neon); }
+        body { background: var(--bg); color: var(--gold); overflow-x: hidden; }
 
-        /* Navbar & Filter */
-        .navbar { padding: 1.5rem; border-bottom: 2px solid var(--neon); display: flex; justify-content: space-between; }
-        .filter-bar { padding: 1rem 2rem; display: flex; gap: 15px; border-bottom: 1px solid #1a3a4a; }
+        /* Efek Garis Scanline */
+        body::before {
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(255, 62, 62, 0.05) 50%, rgba(0, 0, 0, 0.05) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 10;
+        }
+
+        .navbar { padding: 1.5rem; border-bottom: 2px solid var(--red); display: flex; justify-content: space-between; color: var(--red); }
+        .filter-bar { padding: 1rem 2rem; display: flex; gap: 15px; border-bottom: 1px solid #4a1a1a; }
         
-        /* Buttons Casual Hi-Tech */
         button { 
-            background: transparent; border: 1px solid var(--neon); color: var(--neon);
+            background: transparent; border: 1px solid var(--red); color: var(--red);
             padding: 8px 15px; cursor: pointer; transition: 0.3s;
         }
-        button:hover, button.active { background: var(--neon); color: var(--bg); }
+        button:hover, button.active { background: var(--red); color: white; }
 
-        /* Board & Lanes */
         .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; }
-        .lane { min-width: 250px; }
-        .lane h3 { font-size: 0.7rem; margin-bottom: 15px; opacity: 0.6; }
+        .lane { min-width: 250px; border-left: 1px solid #4a1a1a; padding: 10px; }
+        .lane h3 { font-size: 0.7rem; margin-bottom: 15px; color: var(--red); border-bottom: 1px solid var(--red); padding-bottom: 5px; }
 
-        /* BUBBLE EFFECT CARD */
         .task-card { 
             background: var(--card); padding: 15px; margin-bottom: 15px; 
-            border: 1px solid var(--neon); border-radius: 20px; /* Bubble rounded */
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); 
-            cursor: pointer; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid var(--gold); border-radius: 20px; 
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.1); 
+            cursor: pointer; transition: 0.4s;
         }
-        .task-card:hover { transform: scale(1.05); box-shadow: 0 0 25px var(--neon); }
+        .task-card:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--gold); border-color: var(--red); }
+        .task-card strong { display: block; font-size: 0.8rem; margin-bottom: 5px; color: white; }
+        .task-card small { font-size: 0.65rem; color: var(--gold); }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div>// ZIKOGS_WORKSTATION_V1</div>
+        <div>// RED_PROTOCOL_ACTIVE</div>
         <div id="clock">SYSTEM_READY</div>
     </nav>
 
