@@ -2,97 +2,72 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZIKOGS Worksheets</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1e293b; }
-        
+        :root { --primary: #4f46e5; --bg: #f8fafc; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background: var(--bg); color: var(--text); }
+        body { background: var(--bg); color: #1e293b; }
 
-        /* Navbar */
-        .navbar { background: white; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .logo { font-weight: 600; font-size: 1.2rem; }
+        /* Navbar & Controls */
+        .navbar { background: white; padding: 1.5rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .controls { padding: 1.5rem 2rem; display: flex; gap: 10px; }
+        button { padding: 10px 16px; border-radius: 8px; border: none; background: #e2e8f0; cursor: pointer; font-weight: 500; }
+        button.active { background: var(--primary); color: white; }
 
-        /* Tabs & Filters */
-        .controls { padding: 2rem; display: flex; gap: 10px; align-items: center; }
-        button { padding: 10px 16px; border-radius: 8px; border: none; background: #e2e8f0; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #cbd5e1; }
-        .active { background: var(--primary); color: white; }
+        /* Swimlane */
+        .board { display: flex; gap: 15px; padding: 0 2rem 2rem; overflow-x: auto; height: calc(100vh - 180px); }
+        .lane { background: #e2e8f0; min-width: 250px; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .lane h3 { font-size: 0.75rem; color: #64748b; padding-left: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
 
-        /* Board */
-        .board { padding: 0 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .task-card { background: white; padding: 20px; border-radius: 16px; border-left: 6px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03); cursor: pointer; transition: 0.3s; }
-        .task-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
-        
-        /* Modal */
-        dialog { padding: 2rem; border-radius: 20px; border: none; width: 400px; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
-        .step-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; background: #e0e7ff; color: var(--primary); font-size: 0.75rem; font-weight: 600; }
+        /* Task Card */
+        .task-card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); cursor: pointer; border-left: 4px solid var(--primary); }
+        .task-card strong { display: block; font-size: 0.85rem; margin-bottom: 4px; }
+        .task-card small { color: #64748b; font-size: 0.75rem; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="logo">ZIKOGS Worksheets</div>
-    </nav>
+    <nav class="navbar"><strong>ZIKOGS Worksheets</strong></nav>
 
     <div class="controls">
-        <button class="active" onclick="setCategory('Sewa')">Sewa Gedung</button>
-        <button onclick="setCategory('Analisis')">Analisis Gedung</button>
-        <button onclick="setCategory('Khusus')">Tugas Khusus</button>
-        <div id="yearSelect" style="display:none; margin-left:10px;">
-            <select onchange="filterYear(this.value)">
-                <option value="All">Semua Tahun</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-            </select>
-        </div>
+        <button class="active" onclick="filterData('All', this)">Semua</button>
+        <button onclick="filterData('Sewa', this)">Sewa</button>
+        <button onclick="filterData('Analisis', this)">Analisis</button>
+        <button onclick="filterData('Khusus', this)">Khusus</button>
     </div>
 
-    <main class="board" id="board"></main>
-
-    <dialog id="modal">
-        <h2 id="modalTitle">Detail Gedung</h2>
-        <div id="modalContent" style="margin: 20px 0;"></div>
-        <button onclick="document.getElementById('modal').close()" style="width:100%">Tutup</button>
-    </dialog>
+    <div class="board" id="board"></div>
 
     <script>
         const steps = ["Ajuan", "Proses Pengerjaan", "Proses di bidang lain", "Review Kabag", "Kirim ke MM", "Selesai"];
         const data = Array.from({length: 20}, (_, i) => ({
             id: i, gedung: `Gedung ${String.fromCharCode(65 + (i % 5))}`,
             kategori: ['Sewa', 'Analisis', 'Khusus'][i % 3],
-            sewaHabis: 2026 + (i % 2), step: steps[i % 6]
+            step: steps[i % 6]
         }));
 
-        function render(filtered = data) {
+        function filterData(cat, btn) {
+            document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            render(cat === 'All' ? data : data.filter(t => t.kategori === cat));
+        }
+
+        function render(filtered) {
             const board = document.getElementById('board');
-            board.innerHTML = filtered.map(t => `
-                <div class="task-card" onclick="bukaModal('${t.gedung}')">
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong>${t.gedung}</strong>
-                        <span class="step-pill">${t.step}</span>
-                    </div>
-                    <p style="font-size:0.9rem; color:#64748b; margin-top:10px;">${t.kategori} | Habis: ${t.sewaHabis}</p>
+            board.innerHTML = steps.map(step => `
+                <div class="lane">
+                    <h3>${step}</h3>
+                    ${filtered.filter(t => t.step === step).map(t => `
+                        <div class="task-card">
+                            <strong>${t.gedung}</strong>
+                            <small>${t.kategori}</small>
+                        </div>
+                    `).join('')}
                 </div>
             `).join('');
         }
-
-        function setCategory(cat) {
-            document.getElementById('yearSelect').style.display = (cat === 'Sewa') ? 'block' : 'none';
-            render(data.filter(t => t.kategori === cat));
-        }
-
-        function bukaModal(nama) {
-            const list = data.filter(t => t.gedung === nama);
-            document.getElementById('modalTitle').innerText = nama;
-            document.getElementById('modalContent').innerHTML = list.map(t => 
-                `<div><strong>${t.kategori}:</strong> ${t.step}</div>`).join('');
-            document.getElementById('modal').showModal();
-        }
-
-        render();
+        render(data);
     </script>
 </body>
 </html>
